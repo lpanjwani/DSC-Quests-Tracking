@@ -3,12 +3,27 @@ const WhatsAppAPIBase = 'https://baf03189e563.ngrok.io';
 function SendWhatsAppEntryMessages() {
 	const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
 	const sheetData = sheet.getDataRange().getValues();
+	const SheetHeader = sheetData[0];
+
+	let FullNameSheetIndex = null;
+	let UserPhoneSheetIndex = null;
+	let RegistrationMessageSentSheetIndex = null;
+
+	SheetHeader.forEach((item, pos) => {
+		if (item === 'Full Name') {
+			FullNameSheetIndex = pos;
+		} else if (item === 'Phone Number') {
+			UserPhoneSheetIndex = pos;
+		} else if (item === 'Registration WhatsApp Sent') {
+			RegistrationMessageSentSheetIndex = pos;
+		}
+	});
 
 	sheetData.forEach(async (item, position) => {
 		if (position !== 0) {
 			if (!Boolean(item[letterValue('m')])) {
-				const phoneNumber = item[letterValue('f')];
-				const name = item[letterValue('b')];
+				const phoneNumber = item[UserPhoneSheetIndex];
+				const name = item[FullNameSheetIndex];
 				const message = `Hi ${name}, Your Registration at DSC MDX for QwikLabs is recieved! You will be eligible for gifts upon completion of 5 quests!\n\nThis is automated message so no response is needed!`;
 
 				const url = `${WhatsAppAPIBase}\/chat\/sendmessage/${phoneNumber}`;
@@ -19,7 +34,7 @@ function SendWhatsAppEntryMessages() {
 					}
 				};
 				UrlFetchApp.fetch(url, options);
-				sheet.getRange(position + 1, letterValue('m') + 1).setValue(true);
+				sheet.getRange(position + 1, RegistrationMessageSentSheetIndex + 1).setValue(true);
 			}
 		}
 	});
@@ -28,12 +43,27 @@ function SendWhatsAppEntryMessages() {
 function SendWhatsAppMonthlySubscriptionDetails() {
 	const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
 	const sheetData = sheet.getDataRange().getValues();
+	const SheetHeader = sheetData[0];
+
+	let FullNameSheetIndex = null;
+	let UserPhoneSheetIndex = null;
+	let RegistrationMessageSentSheetIndex = null;
+
+	SheetHeader.forEach((item, pos) => {
+		if (item === 'Full Name') {
+			FullNameSheetIndex = pos;
+		} else if (item === 'Phone Number') {
+			UserPhoneSheetIndex = pos;
+		} else if (item === 'Registration WhatsApp Sent') {
+			RegistrationMessageSentSheetIndex = pos;
+		}
+	});
 
 	sheetData.forEach(async (item, position) => {
 		if (position !== 0) {
-			if (!Boolean(item[letterValue('m')])) {
-				const phoneNumber = item[letterValue('f')];
-				const name = item[letterValue('b')];
+			if (!Boolean(item[RegistrationMessageSentSheetIndex])) {
+				const phoneNumber = item[UserPhoneSheetIndex];
+				const name = item[FullNameSheetIndex];
 				const message = `Hi ${name},
 
 The Machine Learning Track will be done QwikLabs which requests a subscription. Please make sure you complete these instruction on the timeframe mentioned below!
@@ -71,44 +101,52 @@ If your unsure about the instructions, please refer to the onboarding informatio
 function SendWhatsAppReminders() {
 	const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
 	const sheetData = sheet.getDataRange().getValues();
+	const SheetHeader = sheetData[0];
 	const getQuestNameRegex = new RegExp(/(Completion Status )(\[)(.*?)(\])/m);
+
+	let FullNameSheetIndex = null;
+	let UserPhoneSheetIndex = null;
+	let QwikLabsURLSheetIndex = null;
+	let CompletedQuestsSheetIndex = null;
+	let RegistrationMessageSentSheetIndex = null;
+
+	SheetHeader.forEach((item, pos) => {
+		const NameRegexResult = getQuestNameRegex.exec(item);
+
+		if (item === 'Full Name') {
+			FullNameSheetIndex = pos;
+		} else if (item === 'Phone Number') {
+			UserPhoneSheetIndex = pos;
+		} else if (item === 'Registration WhatsApp Sent') {
+			RegistrationMessageSentSheetIndex = pos;
+		}
+		if (NameRegexResult && NameRegexResult[3]) {
+			QuestsNames.push({
+				index: pos,
+				name: NameRegexResult[3]
+			});
+		} else if (item === 'QwikLabs Profile URL') {
+			QwikLabsURLSheetIndex = pos;
+		} else if (item === 'Completed Quests') {
+			CompletedQuestsSheetIndex = pos;
+		}
+	});
 
 	let QuestsNames = [];
 
 	sheetData.forEach(async (item, position) => {
 		if (position === 0) {
-			QuestsNames.push({
-				index: letterValue('h'),
-				name: getQuestNameRegex.exec(item[letterValue('h')])[3]
-			});
-			QuestsNames.push({
-				index: letterValue('i'),
-				name: getQuestNameRegex.exec(item[letterValue('i')])[3]
-			});
-			QuestsNames.push({
-				index: letterValue('j'),
-				name: getQuestNameRegex.exec(item[letterValue('j')])[3]
-			});
-			QuestsNames.push({
-				index: letterValue('k'),
-				name: getQuestNameRegex.exec(item[letterValue('k')])[3]
-			});
-			QuestsNames.push({
-				index: letterValue('l'),
-				name: getQuestNameRegex.exec(item[letterValue('l')])[3]
-			});
+			return false;
 		} else {
-			const url = item[letterValue('g')];
+			const url = item[QwikLabsURLSheetIndex];
 
 			const isValidURL = url ? true : false;
 
 			if (isValidURL) {
-				const phoneNumber = item[letterValue('f')];
-				const name = item[letterValue('b')];
-				const completedQuests = item[letterValue('c')];
-				let message = `Hi ${name}, You have finished *${
-					item[letterValue('c')]
-				} Quests* in Total!\n\nQuests Breakdown:\n`;
+				const phoneNumber = item[UserPhoneSheetIndex];
+				const name = item[FullNameSheetIndex];
+				const completedQuests = item[CompletedQuestsSheetIndex];
+				let message = `Hi ${name}, You have finished *${completedQuests} Quests* in Total!\n\nQuests Breakdown:\n`;
 
 				QuestsNames.forEach(quest => {
 					const questName = quest.name;
@@ -146,7 +184,6 @@ function SendWhatsAppReminders() {
 					}
 				};
 				UrlFetchApp.fetch(url, options);
-				sheet.getRange(position + 1, letterValue('m') + 1).setValue(true);
 			}
 		}
 	});
